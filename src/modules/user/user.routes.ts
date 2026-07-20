@@ -5,6 +5,9 @@ import config from "../../config";
 import { Role } from "../../../generated/prisma/client";
 import { sendResponse } from "../../utils/sendResponse";
 import httpStatus from "http-status";
+import { catchAsync } from "../../utils/catchAsync";
+import { JwtPayload } from "jsonwebtoken";
+import { prisma } from "../../lib/prisma";
 
 declare global {
   namespace Express {
@@ -23,30 +26,43 @@ const router = Router();
 
 router.post("/register", userController.handleRegister);
 
-router.get(
-  "/me",
-  (req: Request, res: Response, next: NextFunction) => {
-    const { accessToken } = req.cookies;
+const auth = (...requiredRoles: Role[]) => {
+  return catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    const token = req.cookies.accessToken;
 
-    const verifiedToken = jwtUtils.verifyToken(
-      accessToken,
-      config.jwt_access_secret,
-    );
-
-    if (typeof verifiedToken === "string") {
-      throw new Error(verifiedToken);
+    if (!token) {
+      throw new Error("You are not logged in. Please login to access.");
     }
 
-    const { id, name, email, role } = verifiedToken;
+    const verifiedToken = jwtUtils.verifyToken(token, config.jwt_access_secret);
 
-    const requiredRoles = [Role.ADMIN, Role.AUTHOR, Role.USER];
+    if (!verifiedToken.success) {
+      throw new Error(verifiedToken.error);
+    }
 
-    if (!requiredRoles.includes(role)) {
-      return res.send({
-        success: false,
-        statusCode: httpStatus.FORBIDDEN,
-        message: "Forbidden! You don't have permisson to access this resource",
-      });
+    const { id, name, email, role } = verifiedToken.data as JwtPayload;
+
+    if (requiredRoles.length && !requiredRoles.includes(role)) {
+      throw new Error(
+        "Forbidden! You don't have permisson to access this resource",
+      );
+    }
+
+    const user = await prisma.user.findUnique({
+      where: {
+        id,
+        name,
+        email,
+        role,
+      },
+    });
+
+    if (!user) {
+      throw new Error("User not found. Please, login in again.");
+    }
+
+    if (user.activeStatus === "BLOCKED") {
+      throw new Error("Your account has been bloked. Please, contact support.");
     }
 
     req.user = {
@@ -57,7 +73,12 @@ router.get(
     };
 
     next();
-  },
+  });
+};
+
+router.get(
+  "/me",
+  auth(Role.ADMIN, Role.AUTHOR, Role.USER),
   userController.handleGetProfile,
 );
 
