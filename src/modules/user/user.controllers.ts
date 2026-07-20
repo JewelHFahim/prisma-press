@@ -21,7 +21,6 @@ const handleRegister = catchAsync(
 
 const handleGetProfile = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    
     const profile = await userServices.getMyProfileFromDB(
       req.user?.id as string,
     );
@@ -35,7 +34,31 @@ const handleGetProfile = catchAsync(
   },
 );
 
+const handleUpdateMyProfile = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const id = req.user?.id as string;
+
+    console.log("user: ", req.user);
+
+    console.log("id: ", id);
+
+    const payload = req.body;
+
+    const updatedUser = await userServices.updateMyProfileInDB(id, payload);
+
+    sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.OK,
+      message: "Profile updated successfully",
+      data: {
+        updatedUser,
+      },
+    });
+  },
+);
+
 export const userController = {
   handleRegister,
   handleGetProfile,
+  handleUpdateMyProfile,
 };
