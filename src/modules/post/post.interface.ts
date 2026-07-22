@@ -8,3 +8,12 @@ export interface ICreatePostPayload {
   status: PostsStatus;
   tag: string[];
 }
+
+export interface IUpdatePayload {
+  title?: string;
+  content?: string;
+  thumbnail?: string;
+  isFeatured?: boolean;
+  status?: PostsStatus;
+  tag?: string[];
+}

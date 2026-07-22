@@ -75,11 +75,47 @@ const handleGetSignlePost = catchAsync(
 );
 
 const handleUpdatePost = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {},
+  async (req: Request, res: Response, next: NextFunction) => {
+    const authorId = req.user?.id;
+    const isAdmin = req.user?.role === "ADMIN";
+    const postId = req.params.postId;
+    const payload = req.body;
+
+    const result = await postService.updatePostIntoDB(
+      postId as string,
+      authorId as string,
+      isAdmin,
+      payload,
+    );
+
+    sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.CREATED,
+      message: "Post updated successfully",
+      data: result,
+    });
+  },
 );
 
 const handleDeletePost = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {},
+  async (req: Request, res: Response, next: NextFunction) => {
+    const authorId = req.user?.id;
+    const isAdmin = req.user?.role === "ADMIN";
+    const postId = req.params.postId;
+
+    await postService.deletePostFromDB(
+      postId as string,
+      authorId as string,
+      isAdmin,
+    );
+
+    sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.CREATED,
+      message: "Post deleted successfully",
+      data: null,
+    });
+  },
 );
 
 export const postController = {
