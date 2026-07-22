@@ -28,15 +28,50 @@ const handleGetPostStats = catchAsync(
 );
 
 const handleGetAllPosts = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {},
+  async (req: Request, res: Response, next: NextFunction) => {
+    const result = await postService.getAllPostsFromDB();
+
+    sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.OK,
+      message: "Posts retrive successfully",
+      data: result,
+    });
+  },
 );
 
 const handleGetMyPosts = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {},
+  async (req: Request, res: Response, next: NextFunction) => {
+    const authorId = req.user?.id;
+
+    const result = await postService.getMyPostFromDB(authorId as string);
+
+    sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.OK,
+      message: "Posts retrive successfully",
+      data: result,
+    });
+  },
 );
 
 const handleGetSignlePost = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {},
+  async (req: Request, res: Response, next: NextFunction) => {
+    const postId = req.params.postId;
+
+    if (!postId) {
+      throw new Error("Post ID required in params");
+    }
+
+    const result = await postService.getSinglePostFromDB(postId as string);
+
+    sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.OK,
+      message: "Post retrive successfully",
+      data: result,
+    });
+  },
 );
 
 const handleUpdatePost = catchAsync(
