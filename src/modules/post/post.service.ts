@@ -33,46 +33,53 @@ const getAllPostsFromDB = async () => {
 };
 
 const getSinglePostFromDB = async (postId: string) => {
-  await prisma.post.update({
-    where: {
-      id: postId,
-    },
-    data: {
-      views: {
-        increment: 1,
+  const transactionResult = await prisma.$transaction(async (tx) => {
+    await tx.post.update({
+      where: {
+        id: postId,
       },
-    },
+      data: {
+        views: {
+          increment: 1,
+        },
+      },
+    });
+
+    // throw new Error("Fake error");
+
+    const post = await tx.post.findUniqueOrThrow({
+      where: {
+        id: postId,
+      },
+      include: {
+        author: {
+          omit: {
+            password: true,
+          },
+        },
+
+        commnets: {
+          where: {
+            status: CommentStatus.APPROVED,
+          },
+
+          orderBy: {
+            createdAt: "desc",
+          },
+        },
+
+        _count: {
+          select: {
+            commnets: true,
+          },
+        },
+      },
+    });
+
+    return post;
   });
 
-  // throw new Error("Fake error");
-
-  const result = await prisma.post.findUniqueOrThrow({
-    where: {
-      id: postId,
-    },
-    include: {
-      author: {
-        omit: {
-          password: true,
-        },
-      },
-      commnets: {
-        where: {
-          status: CommentStatus.APPROVED,
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-      },
-      _count: {
-        select: {
-          commnets: true,
-        },
-      },
-    },
-  });
-
-  return result;
+  return transactionResult;
 };
 
 const getMyPostFromDB = async (authorId: string) => {
