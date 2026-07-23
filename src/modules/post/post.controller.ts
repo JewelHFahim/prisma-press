@@ -24,7 +24,16 @@ const handleCreatePost = catchAsync(
 );
 
 const handleGetPostStats = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {},
+  async (req: Request, res: Response, next: NextFunction) => {
+    const result = await postService.getPostStatsFromDB();
+
+    sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.OK,
+      message: "Posts stats retrive successfully",
+      data: result,
+    });
+  },
 );
 
 const handleGetAllPosts = catchAsync(
