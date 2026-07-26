@@ -18,15 +18,82 @@ const createPostIntoDB = async (
 
 const getAllPostsFromDB = async () => {
   const result = await prisma.post.findMany({
-    where: {
-      AND: [
-        {
-          title: "Different Post, From Different Id",
-        },
-        {
-          content: "First Post Contentn"
-        },
-      ],
+    // filtering / exect match
+    // where: {
+    //   AND: [
+    //     {
+    //       title: "Different Post, From Different Id",
+    //     },
+    //     {
+    //       content: "First Post Contentn",
+    //     },
+    //   ],
+    // },
+
+    // searching / partial match
+    // where: {
+    //   title: {
+    //     contains: "kataR",
+    //     mode: "insensitive",
+    //   },
+    // },
+
+    // where: {
+    //   OR: [
+    //     {
+    //       title: {
+    //         contains: "kataR",
+    //         mode: "insensitive",
+    //       },
+    //     },
+    //     {
+    //       content: {
+    //         contains: "kat",
+    //         mode: "insensitive",
+    //       },
+    //     },
+    //   ],
+    // },
+
+    // combinig search (OR operator) and filtering (AND operator);
+
+    // where: {
+    //   AND: [
+    //     {
+    //       //searching
+    //       OR: [
+    //         {
+    //           title: {
+    //             contains: "KAt",
+    //             mode: "insensitive",
+    //           },
+    //         },
+    //         {
+    //           content: {
+    //             contains: "katA",
+    //             mode: "insensitive",
+    //           },
+    //         },
+    //       ],
+    //     },
+    //     // filtering
+    //     {
+    //       title: "Katar",
+    //     },
+    //     {
+    //       content: "Katar",
+    //     },
+    //   ],
+    // },
+
+    // pagination
+    take: 2,
+    skip: 4,
+
+    //sorting
+    orderBy: {
+      createdAt: "desc",
+      title: "asc"
     },
 
     include: {
