@@ -1,6 +1,10 @@
 import { CommentStatus, PostsStatus } from "../../../generated/prisma/client";
 import { prisma } from "../../lib/prisma";
-import { ICreatePostPayload, IUpdatePayload } from "./post.interface";
+import {
+  ICreatePostPayload,
+  IPostQuery,
+  IUpdatePayload,
+} from "./post.interface";
 
 const createPostIntoDB = async (
   payload: ICreatePostPayload,
@@ -87,14 +91,24 @@ const getAllPostsFromDB = async () => {
     // },
 
     // pagination
-    take: 2,
-    skip: 4,
+
+    
+    // where: {
+    //   AND: [
+    //     query.title ? { title: query.title } : {},
+
+    //     query.content ? { content: query.content } : {},
+    //   ],
+    // },
+
+    // take: 2,
+    // skip: 4,
 
     //sorting
-    orderBy: {
-      createdAt: "desc",
-      title: "asc"
-    },
+    // orderBy: {
+    //   createdAt: "desc",
+    //   title: "asc",
+    // },
 
     include: {
       author: {
