@@ -38,9 +38,8 @@ const handleGetPostStats = catchAsync(
 
 const handleGetAllPosts = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const query = req.params;
-    console.log("query: ", query)
-    const result = await postService.getAllPostsFromDB();
+    const query = req.query;
+    const result = await postService.getAllPostsFromDB(query);
 
     sendResponse(res, {
       success: true,

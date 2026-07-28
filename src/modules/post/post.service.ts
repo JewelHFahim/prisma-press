@@ -20,7 +20,8 @@ const createPostIntoDB = async (
   return result;
 };
 
-const getAllPostsFromDB = async () => {
+const getAllPostsFromDB = async (query: IPostQuery) => {
+  console.log("Query:", query)
   const result = await prisma.post.findMany({
     // filtering / exect match
     // where: {
@@ -92,14 +93,32 @@ const getAllPostsFromDB = async () => {
 
     // pagination
 
-    
-    // where: {
-    //   AND: [
-    //     query.title ? { title: query.title } : {},
+    where: {
+      AND: [
+        query.searchTerm
+          ? {
+              OR: [
+                {
+                  title: {
+                    contains: query.searchTerm,
+                    mode: "insensitive",
+                  },
+                },
+                {
+                  content: {
+                    contains: query.searchTerm,
+                    mode: "insensitive",
+                  },
+                },
+              ],
+            }
+          : {},
 
-    //     query.content ? { content: query.content } : {},
-    //   ],
-    // },
+        query.title ? { title: query.title } : {},
+
+        query.content ? { content: query.content } : {},
+      ],
+    },
 
     // take: 2,
     // skip: 4,
