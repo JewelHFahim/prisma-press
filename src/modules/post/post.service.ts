@@ -1,4 +1,5 @@
 import { CommentStatus, PostsStatus } from "../../../generated/prisma/client";
+import { PostWhereInput } from "../../../generated/prisma/models";
 import { prisma } from "../../lib/prisma";
 import {
   ICreatePostPayload,
@@ -21,113 +22,102 @@ const createPostIntoDB = async (
 };
 
 const getAllPostsFromDB = async (query: IPostQuery) => {
-  console.log("Query:", query)
+  const limit = query.limit ? Number(query.limit) : 2;
+  const page = query.page ? Number(query.page) : 1;
+  const skip = (page - 1) * limit;
+  const sortOrder = query.sortOrder ? query.sortOrder : "desc";
+  const sortBy = query.sortBy ? query.sortBy : "createdAt";
+  const tags =
+    typeof query.tags === "string" ? JSON.parse(query.tags) : query.tags;
+
+  const andConditions: PostWhereInput[] = [];
+
+  if (query.searchTerm) {
+    andConditions.push({
+      OR: [
+        {
+          title: {
+            contains: query.searchTerm,
+            mode: "insensitive",
+          },
+        },
+        {
+          content: {
+            contains: query.searchTerm,
+            mode: "insensitive",
+          },
+        },
+      ],
+    });
+  }
+
+  if (query.title) {
+    andConditions.push({ title: query.title });
+  }
+
+  if (query.content) {
+    andConditions.push({ content: query.content });
+  }
+
+  if (query.authorId) {
+    andConditions.push({
+      authorId: query.authorId,
+    });
+  }
+
+  if (query.isFeatured) {
+    andConditions.push({
+      isFeatured: Boolean(query.isFeatured),
+    });
+  }
+
+  if (Array.isArray(tags) && tags.length) {
+    andConditions.push({
+      tags: {
+        hasSome: tags,
+      },
+    });
+  }
+
   const result = await prisma.post.findMany({
-    // filtering / exect match
     // where: {
     //   AND: [
-    //     {
-    //       title: "Different Post, From Different Id",
-    //     },
-    //     {
-    //       content: "First Post Contentn",
-    //     },
+    //     query.searchTerm
+    //       ? {
+    //           OR: [
+    //             {
+    //               title: {
+    //                 contains: query.searchTerm,
+    //                 mode: "insensitive",
+    //               },
+    //             },
+    //             {
+    //               content: {
+    //                 contains: query.searchTerm,
+    //                 mode: "insensitive",
+    //               },
+    //             },
+    //           ],
+    //         }
+    //       : {},
+
+    //     query.title ? { title: query.title } : {},
+
+    //     query.content ? { content: query.content } : {},
     //   ],
     // },
-
-    // searching / partial match
-    // where: {
-    //   title: {
-    //     contains: "kataR",
-    //     mode: "insensitive",
-    //   },
-    // },
-
-    // where: {
-    //   OR: [
-    //     {
-    //       title: {
-    //         contains: "kataR",
-    //         mode: "insensitive",
-    //       },
-    //     },
-    //     {
-    //       content: {
-    //         contains: "kat",
-    //         mode: "insensitive",
-    //       },
-    //     },
-    //   ],
-    // },
-
-    // combinig search (OR operator) and filtering (AND operator);
-
-    // where: {
-    //   AND: [
-    //     {
-    //       //searching
-    //       OR: [
-    //         {
-    //           title: {
-    //             contains: "KAt",
-    //             mode: "insensitive",
-    //           },
-    //         },
-    //         {
-    //           content: {
-    //             contains: "katA",
-    //             mode: "insensitive",
-    //           },
-    //         },
-    //       ],
-    //     },
-    //     // filtering
-    //     {
-    //       title: "Katar",
-    //     },
-    //     {
-    //       content: "Katar",
-    //     },
-    //   ],
-    // },
-
-    // pagination
 
     where: {
-      AND: [
-        query.searchTerm
-          ? {
-              OR: [
-                {
-                  title: {
-                    contains: query.searchTerm,
-                    mode: "insensitive",
-                  },
-                },
-                {
-                  content: {
-                    contains: query.searchTerm,
-                    mode: "insensitive",
-                  },
-                },
-              ],
-            }
-          : {},
-
-        query.title ? { title: query.title } : {},
-
-        query.content ? { content: query.content } : {},
-      ],
+      AND: andConditions,
     },
 
-    // take: 2,
-    // skip: 4,
+    take: limit,
+    skip: skip,
 
     //sorting
-    // orderBy: {
-    //   createdAt: "desc",
-    //   title: "asc",
-    // },
+    orderBy: {
+      [sortBy]: sortOrder,
+    },
 
     include: {
       author: {
