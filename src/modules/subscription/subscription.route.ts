@@ -6,7 +6,7 @@ import { Role } from "../../../generated/prisma/client";
 const router = Router();
 
 router.post(
-  ".checkout",
+  "/checkout",
   auth(Role.ADMIN, Role.AUTHOR, Role.USER),
   subscriptionController.createSubscriptionSession,
 );
