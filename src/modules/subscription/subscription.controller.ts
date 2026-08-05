@@ -14,8 +14,6 @@ const createSubscriptionSession = async (
     userId as string,
   );
 
-  console.log("Result", result)
-
   sendResponse(res, {
     success: true,
     statusCode: httpStatus.CREATED,
