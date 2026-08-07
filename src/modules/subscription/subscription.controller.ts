@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import { subscriptionServices } from "./subscription.service";
 import { sendResponse } from "../../utils/sendResponse";
 import httpStatus from "http-status";
+import { catchAsync } from "../../utils/catchAsync";
 
 const createSubscriptionSession = async (
   req: Request,
@@ -22,6 +23,23 @@ const createSubscriptionSession = async (
   });
 };
 
+const handleWebhook = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const payload = req.body as Buffer;
+    const signature = req.headers["stripe-signature"]!;
+    
+    await subscriptionServices.handleWebhook(payload, signature)
+
+    sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.OK,
+      message: "Webhook triggured successfully",
+      data: null,
+    });
+  },
+);
+
 export const subscriptionController = {
   createSubscriptionSession,
+  handleWebhook,
 };

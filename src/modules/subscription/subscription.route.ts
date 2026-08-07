@@ -11,4 +11,6 @@ router.post(
   subscriptionController.createSubscriptionSession,
 );
 
+router.post("/weebhook", subscriptionController.handleWebhook);
+
 export const subscriptionRoutes = router;
