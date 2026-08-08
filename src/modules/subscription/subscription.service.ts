@@ -63,20 +63,21 @@ const handleWebhook = async (payload: Buffer, signature: string) => {
 
   // Handle the event
   switch (event.type) {
-    case "payment_intent.succeeded":
-      const paymentIntent = event.data.object;
-      console.log(`PaymentIntent for ${paymentIntent.amount} was successful!`);
-      // Then define and call a method to handle the successful payment intent.
-      // handlePaymentIntentSucceeded(paymentIntent);
+    case "checkout.session.completed":
+      const paymentObject = event.data.object;
+
       break;
-    case "payment_method.attached":
+    case "customer.subscription.updated":
       const paymentMethod = event.data.object;
-      // Then define and call a method to handle the successful attachment of a PaymentMethod.
-      // handlePaymentMethodAttached(paymentMethod);
+
       break;
+
+    case "customer.subscription.deleted":
+      break;
+
     default:
       // Unexpected event type
-      console.log(`Unhandled event type ${event.type}.`);
+      console.log(`No event matched. Unhandled event type ${event.type}.`);
   }
 };
 

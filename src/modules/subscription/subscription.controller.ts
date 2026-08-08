@@ -26,9 +26,9 @@ const createSubscriptionSession = async (
 const handleWebhook = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const payload = req.body as Buffer;
-    const signature = req.headers["stripe-signature"]!;
-    
-    await subscriptionServices.handleWebhook(payload, signature)
+    const signature = req.headers["stripe-signature"];
+
+    await subscriptionServices.handleWebhook(payload, signature as string);
 
     sendResponse(res, {
       success: true,
