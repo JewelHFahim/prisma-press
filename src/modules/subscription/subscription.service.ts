@@ -52,7 +52,7 @@ const createSubscriptionSession = async (userId: string) => {
   };
 };
 
-const handleWebhook = async (payload: Buffer, signature: string) => {
+const webhook = async (payload: Buffer, signature: string) => {
   const endpointSecret = config.stripe_webhook_secret;
 
   const event = stripe.webhooks.constructEvent(
@@ -64,12 +64,12 @@ const handleWebhook = async (payload: Buffer, signature: string) => {
   // Handle the event
   switch (event.type) {
     case "checkout.session.completed":
-      const paymentObject = event.data.object;
+      console.log("event.data.object", event.data.object)
 
       break;
     case "customer.subscription.updated":
-      const paymentMethod = event.data.object;
 
+    
       break;
 
     case "customer.subscription.deleted":
@@ -83,5 +83,5 @@ const handleWebhook = async (payload: Buffer, signature: string) => {
 
 export const subscriptionServices = {
   createSubscriptionSession,
-  handleWebhook,
+  webhook,
 };

@@ -1,10 +1,8 @@
-import express, { Application, NextFunction, Request, Response } from "express";
+import express, { Application, Request, Response } from "express";
 import cors from "cors";
 import config from "./config";
 import cookieParser from "cookie-parser";
 import { prisma } from "./lib/prisma";
-import httpStatus from "http-status";
-import bcrypt from "bcryptjs";
 import { userRoutes } from "./modules/user/user.routes";
 import { authRoutes } from "./modules/auth/auth.routes";
 import { postRoutes } from "./modules/post/post.routes";
@@ -12,7 +10,6 @@ import { commentRoutes } from "./modules/comment/comment.routes";
 import { notFound } from "./middlewares/notFound";
 import { globalErrorHandler } from "./middlewares/globalErrorHandler";
 import { subscriptionRoutes } from "./modules/subscription/subscription.route";
-import { stripe } from "./lib/stripe";
 
 const app: Application = express();
 
@@ -23,11 +20,8 @@ app.use(
   }),
 );
 
-const endpointSecret = config.stripe_webhook_secret;
 
-
-app.post("/api/subscription/webhook", express.raw({type: 'application/json'}))
-
+app.use("/api/subscription/webhook", express.raw({type: 'application/json'}))
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

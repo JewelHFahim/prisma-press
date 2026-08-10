@@ -28,7 +28,7 @@ const handleWebhook = catchAsync(
     const payload = req.body as Buffer;
     const signature = req.headers["stripe-signature"];
 
-    await subscriptionServices.handleWebhook(payload, signature as string);
+    await subscriptionServices.webhook(payload, signature as string);
 
     sendResponse(res, {
       success: true,
