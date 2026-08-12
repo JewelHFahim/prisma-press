@@ -2,6 +2,7 @@ import { Stripe } from "stripe";
 import config from "../../config";
 import { prisma } from "../../lib/prisma";
 import { stripe } from "../../lib/stripe";
+import { SubscriptionStatus } from "../../../generated/prisma/client";
 
 const createSubscriptionSession = async (userId: string) => {
   const transactionResult = await prisma.$transaction(async (tx) => {
@@ -69,11 +70,13 @@ const webhook = async (payload: Buffer, signature: string) => {
 
       break;
     case "customer.subscription.updated":
-      break;
+      await handleChangeSubscription(event.data.object);
 
+      break;
     case "customer.subscription.deleted":
-      break;
+      await handleChangeSubscription(event.data.object);
 
+      break;
     default:
       // Unexpected event type
       console.log(`No event matched. Unhandled event type ${event.type}.`);
@@ -94,7 +97,9 @@ const handleCheckoutCompleted = async (session: Stripe.Checkout.Session) => {
   const stripeSubscriptionId = session.subscription as string;
 
   if (!userId || !stripeCustomerId || !stripeSubscriptionId) {
-    throw new Error("Webhook Operation Failed");
+    console.log(`Webhook: Missing values for creating Stripe Checkout`);
+
+    return;
   }
 
   const stripeSubscription =
@@ -119,6 +124,43 @@ const handleCheckoutCompleted = async (session: Stripe.Checkout.Session) => {
       stripeCustomerId,
       stripeSubscriptionId,
       status: "ACTIVE",
+      currentPeriodEnd,
+    },
+  });
+};
+
+const handleChangeSubscription = async (payload: Stripe.Subscription) => {
+  const stripeSubscriptionId = payload.id;
+
+  const status =
+    payload.status === "active" || payload.status === "trialing"
+      ? SubscriptionStatus.ACTIVE
+      : payload.status === "canceled"
+        ? SubscriptionStatus.CANCELD
+        : SubscriptionStatus.EXPIRED;
+
+  const currentPeriodEnd = getTimePeriode(payload);
+
+  const isSubscriptionExist = await prisma.subscription.findUnique({
+    where: {
+      stripeSubscriptionId,
+    },
+  });
+
+  if (!isSubscriptionExist) {
+    console.log(
+      `Webhook: No subscription found for subscription id: ${stripeSubscriptionId}`,
+    );
+
+    return;
+  }
+
+  await prisma.subscription.update({
+    where: {
+      stripeSubscriptionId,
+    },
+    data: {
+      status,
       currentPeriodEnd,
     },
   });
