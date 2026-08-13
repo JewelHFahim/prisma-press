@@ -3,6 +3,10 @@ import config from "../../config";
 import { prisma } from "../../lib/prisma";
 import { stripe } from "../../lib/stripe";
 import { SubscriptionStatus } from "../../../generated/prisma/client";
+import {
+  handleChangeSubscription,
+  handleCheckoutCompleted,
+} from "../../utils/subscription.utils";
 
 const createSubscriptionSession = async (userId: string) => {
   const transactionResult = await prisma.$transaction(async (tx) => {
@@ -83,88 +87,7 @@ const webhook = async (payload: Buffer, signature: string) => {
   }
 };
 
-const getTimePeriode = (payload: Stripe.Subscription) => {
-  const currentPeriodEndINMilSec = payload.items.data[0]?.current_period_end!;
-
-  const currentPeriodEnd = new Date(currentPeriodEndINMilSec * 1000);
-
-  return currentPeriodEnd;
-};
-
-const handleCheckoutCompleted = async (session: Stripe.Checkout.Session) => {
-  const userId = session.metadata?.userId!;
-  const stripeCustomerId = session.customer as string;
-  const stripeSubscriptionId = session.subscription as string;
-
-  if (!userId || !stripeCustomerId || !stripeSubscriptionId) {
-    console.log(`Webhook: Missing values for creating Stripe Checkout`);
-
-    return;
-  }
-
-  const stripeSubscription =
-    await stripe.subscriptions.retrieve(stripeSubscriptionId);
-
-  const currentPeriodEnd = getTimePeriode(stripeSubscription);
-
-  await prisma.subscription.upsert({
-    where: {
-      userId,
-    },
-
-    create: {
-      userId,
-      stripeCustomerId,
-      stripeSubscriptionId,
-      status: "ACTIVE",
-      currentPeriodEnd,
-    },
-
-    update: {
-      stripeCustomerId,
-      stripeSubscriptionId,
-      status: "ACTIVE",
-      currentPeriodEnd,
-    },
-  });
-};
-
-const handleChangeSubscription = async (payload: Stripe.Subscription) => {
-  const stripeSubscriptionId = payload.id;
-
-  const status =
-    payload.status === "active" || payload.status === "trialing"
-      ? SubscriptionStatus.ACTIVE
-      : payload.status === "canceled"
-        ? SubscriptionStatus.CANCELD
-        : SubscriptionStatus.EXPIRED;
-
-  const currentPeriodEnd = getTimePeriode(payload);
-
-  const isSubscriptionExist = await prisma.subscription.findUnique({
-    where: {
-      stripeSubscriptionId,
-    },
-  });
-
-  if (!isSubscriptionExist) {
-    console.log(
-      `Webhook: No subscription found for subscription id: ${stripeSubscriptionId}`,
-    );
-
-    return;
-  }
-
-  await prisma.subscription.update({
-    where: {
-      stripeSubscriptionId,
-    },
-    data: {
-      status,
-      currentPeriodEnd,
-    },
-  });
-};
+// stripe subscriptions cancel sub_1U3ACVJhK2ZyCrqgCmV6zGVF
 
 export const subscriptionServices = {
   createSubscriptionSession,
