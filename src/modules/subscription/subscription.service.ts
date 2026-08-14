@@ -58,6 +58,7 @@ const createSubscriptionSession = async (userId: string) => {
   };
 };
 
+// stripe subscriptions cancel sub_1U3ACVJhK2ZyCrqgCmV6zGVF
 const webhook = async (payload: Buffer, signature: string) => {
   const endpointSecret = config.stripe_webhook_secret;
 
@@ -87,9 +88,27 @@ const webhook = async (payload: Buffer, signature: string) => {
   }
 };
 
-// stripe subscriptions cancel sub_1U3ACVJhK2ZyCrqgCmV6zGVF
+const getSubscriptionStatus = async (userId: string) => {
+  const isSubscriptionExits = await prisma.subscription.findFirstOrThrow({
+    where: {
+      userId,
+    },
+  });
+
+  const isActive =
+    isSubscriptionExits.status === "ACTIVE" &&
+    isSubscriptionExits.currentPeriodEnd &&
+    new Date(isSubscriptionExits.currentPeriodEnd) > new Date();
+
+  return {
+    status: isSubscriptionExits.status,
+    isSubscribed: isActive,
+    currentPeriodEnd: isSubscriptionExits.currentPeriodEnd,
+  };
+};
 
 export const subscriptionServices = {
   createSubscriptionSession,
   webhook,
+  getSubscriptionStatus
 };
