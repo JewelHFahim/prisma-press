@@ -22,7 +22,11 @@ export const globalErrorHandler = (
     } else if (err.code === "P2003") {
       statusCode = httpStatus.BAD_REQUEST,
       errorMessage = "Foregin key Constrain failed"
-    }else{
+    }else if(err.code === "P2025"){
+      statusCode = httpStatus.BAD_REQUEST,
+      errorMessage = "An operation failed"
+    }
+    else{
       statusCode = httpStatus.BAD_REQUEST,
       errorMessage = "An operation failed because it depends on one or more records that were required but not found. {cause}"
     }
