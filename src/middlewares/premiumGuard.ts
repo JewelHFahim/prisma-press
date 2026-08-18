@@ -7,6 +7,8 @@ export const subscriptionGuard = ()=>{
     return  catchAsync(async (req: Request, res: Response, next: NextFunction) => {
     const userId = req.user?.id;
 
+    console.log(userId)
+
     const subscribe = await prisma.subscription.findUnique({
       where: {
         userId,
