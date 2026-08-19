@@ -11,6 +11,21 @@ const createPostIntoDB = async (
   payload: ICreatePostPayload,
   userId: string,
 ) => {
+  const user = await prisma.user.findUniqueOrThrow({
+    where: {
+      id: userId,
+    },
+    include: {
+      subscription: true,
+    },
+  });
+
+  if (payload.isPremium && user.subscription?.status !== "ACTIVE") {
+    throw new Error(
+      "You cant create a Premium content. You are not a Premium Member!",
+    );
+  }
+
   const result = await prisma.post.create({
     data: {
       ...payload,
@@ -78,38 +93,18 @@ const getAllPostsFromDB = async (query: IPostQuery) => {
       },
     });
   }
+
+  if (query.status) {
+    andConditions.push({
+      status: query.status,
+    });
+  }
+
   andConditions.push({
     isPremium: false,
   });
 
   const result = await prisma.post.findMany({
-    // where: {
-    //   AND: [
-    //     query.searchTerm
-    //       ? {
-    //           OR: [
-    //             {
-    //               title: {
-    //                 contains: query.searchTerm,
-    //                 mode: "insensitive",
-    //               },
-    //             },
-    //             {
-    //               content: {
-    //                 contains: query.searchTerm,
-    //                 mode: "insensitive",
-    //               },
-    //             },
-    //           ],
-    //         }
-    //       : {},
-
-    //     query.title ? { title: query.title } : {},
-
-    //     query.content ? { content: query.content } : {},
-    //   ],
-    // },
-
     where: {
       AND: andConditions,
     },
@@ -133,7 +128,19 @@ const getAllPostsFromDB = async (query: IPostQuery) => {
     },
   });
 
-  return result;
+  const totalPostCount = await prisma.post.count({
+    where: { AND: andConditions },
+  });
+
+  return {
+    data: result,
+    meta: {
+      page: page,
+      limit: limit,
+      total: totalPostCount,
+      totalPage: Math.ceil(totalPostCount / limit),
+    },
+  };
 };
 
 const getSinglePostFromDB = async (postId: string) => {
@@ -154,7 +161,7 @@ const getSinglePostFromDB = async (postId: string) => {
     const post = await tx.post.findUniqueOrThrow({
       where: {
         id: postId,
-        isPremium: false
+        isPremium: false,
       },
       include: {
         author: {
